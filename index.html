@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Stitchly AI — T-Shirt Assistant</title>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700&family=JetBrains+Mono&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Sora', sans-serif;
+      background: #0a0a0f;
+      color: #e8e8e8;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 1.5rem 1rem;
+    }
+    .navbar {
+      width: 100%;
+      max-width: 720px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 2rem;
+    }
+    .brand { display: flex; align-items: center; gap: 10px; }
+    .brand-icon {
+      width: 38px; height: 38px;
+      background: linear-gradient(135deg, #ff6b35, #ff9f1c);
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 20px;
+    }
+    .brand-name {
+      font-size: 22px; font-weight: 700;
+      background: linear-gradient(135deg, #ff6b35, #ff9f1c);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .brand-sub { font-size: 11px; color: #666; }
+    .nav-badge {
+      font-size: 11px;
+      background: #ff6b3520; color: #ff9f1c;
+      border: 1px solid #ff6b3540;
+      padding: 4px 12px; border-radius: 20px; font-weight: 500;
+    }
+    .quick-prompts {
+      width: 100%; max-width: 720px;
+      display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 1rem;
+    }
+    .qbtn {
+      font-family: 'Sora', sans-serif; font-size: 12px;
+      padding: 6px 14px; border: 1px solid #2a2d3a;
+      border-radius: 20px; background: #1a1d27; color: #aaa;
+      cursor: pointer; transition: all 0.2s;
+    }
+    .qbtn:hover { border-color: #ff6b35; color: #ff9f1c; background: #ff6b3510; }
+    .api-box {
+      width: 100%; max-width: 720px;
+      background: #1a1d27; border: 1px solid #2a2d3a;
+      border-radius: 14px; padding: 1rem 1.25rem; margin-bottom: 1rem;
+    }
+    .api-box label { font-size: 12px; color: #666; display: block; margin-bottom: 6px; }
+    .api-row { display: flex; gap: 8px; }
+    .api-row input {
+      flex: 1; font-family: 'JetBrains Mono', monospace; font-size: 13px;
+      padding: 9px 14px; border: 1px solid #2a2d3a; border-radius: 10px;
+      background: #0a0a0f; color: #e8e8e8; outline: none; transition: border-color 0.2s;
+    }
+    .api-row input:focus { border-color: #ff6b35; }
+    .btn-save {
+      padding: 9px 18px;
+      background: linear-gradient(135deg, #ff6b35, #ff9f1c);
+      color: white; border: none; border-radius: 10px;
+      font-size: 13px; font-weight: 600; cursor: pointer;
+      font-family: 'Sora', sans-serif; transition: opacity 0.2s;
+    }
+    .btn-save:hover { opacity: 0.85; }
+    .hint { font-size: 11px; color: #444; margin-top: 6px; }
+    .hint a { color: #ff9f1c; text-decoration: none; }
+    .chat-box {
+      width: 100%; max-width: 720px;
+      background: #1a1d27; border: 1px solid #2a2d3a;
+      border-radius: 16px; overflow: hidden;
+    }
+    .chat-header {
+      padding: 12px 16px; border-bottom: 1px solid #2a2d3a;
+      display: flex; align-items: center; gap: 10px;
+      font-size: 13px; color: #888;
+    }
+    .online-dot {
+      width: 8px; height: 8px; background: #4ade80;
+      border-radius: 50%; animation: pulse 2s infinite;
+    }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+    .messages {
+      height: 400px; overflow-y: auto; padding: 1.25rem;
+      display: flex; flex-direction: column; gap: 14px; scroll-behavior: smooth;
+    }
+    .messages::-webkit-scrollbar { width: 4px; }
+    .messages::-webkit-scrollbar-thumb { background: #2a2d3a; border-radius: 4px; }
+    .empty {
+      flex: 1; display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      color: #333; font-size: 13px; gap: 10px; text-align: center;
+    }
+    .empty-icon { font-size: 40px; }
+    .msg { display: flex; flex-direction: column; max-width: 82%; }
+    .msg.user { align-self: flex-end; align-items: flex-end; }
+    .msg.ai { align-self: flex-start; align-items: flex-start; }
+    .ai-label { font-size: 11px; color: #ff9f1c; font-weight: 600; margin-bottom: 4px; padding-left: 4px; }
+    .bubble { padding: 12px 16px; border-radius: 18px; font-size: 14px; line-height: 1.7; white-space: pre-wrap; }
+    .msg.user .bubble {
+      background: linear-gradient(135deg, #ff6b35, #ff9f1c);
+      color: white; border-bottom-right-radius: 4px;
+    }
+    .msg.ai .bubble {
+      background: #22263a; color: #e8e8e8;
+      border-bottom-left-radius: 4px; border: 1px solid #2a2d3a;
+    }
+    .msg-time { font-size: 11px; color: #333; margin-top: 4px; padding: 0 4px; }
+    .typing {
+      display: flex; align-items: center; gap: 5px;
+      padding: 12px 16px; background: #22263a;
+      border-radius: 18px; border-bottom-left-radius: 4px;
+      border: 1px solid #2a2d3a; width: fit-content;
+    }
+    .dot { width: 7px; height: 7px; background: #ff9f1c; border-radius: 50%; animation: bounce 1.2s infinite; }
+    .dot:nth-child(2) { animation-delay: 0.2s; }
+    .dot:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes bounce { 0%, 60%, 100% { transform: translateY(0); } 30% { transform: translateY(-7px); } }
+    .input-row { display: flex; gap: 10px; padding: 14px; border-top: 1px solid #2a2d3a; align-items: center; }
+    .input-row input {
+      flex: 1; font-family: 'Sora', sans-serif; font-size: 14px;
+      padding: 12px 18px; border: 1px solid #2a2d3a; border-radius: 30px;
+      background: #0a0a0f; color: #e8e8e8; outline: none; transition: border-color 0.2s;
+    }
+    .input-row input:focus { border-color: #ff6b35; }
+    .btn-send {
+      width: 46px; height: 46px;
+      background: linear-gradient(135deg, #ff6b35, #ff9f1c);
+      border: none; border-radius: 50%; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0; transition: opacity 0.2s;
+    }
+    .btn-send:hover { opacity: 0.85; }
+    .btn-send:disabled { background: #2a2d3a; cursor: not-allowed; opacity: 1; }
+    .btn-send svg { width: 18px; height: 18px; fill: white; }
+    .status { font-size: 11px; text-align: center; padding: 6px 14px 12px; color: #444; }
+    .status.ok { color: #4ade80; }
+    .status.error { color: #f87171; }
+    footer { margin-top: 1.5rem; font-size: 11px; color: #2a2d3a; text-align: center; }
+  </style>
+</head>
+<body>
+  <nav class="navbar">
+    <div class="brand">
+      <div class="brand-icon">👕</div>
+      <div>
+        <div class="brand-name">Stitchly</div>
+        <div class="brand-sub">AI Fashion Assistant</div>
+      </div>
+    </div>
+    <span class="nav-badge">Powered by Gemini</span>
+  </nav>
+  <div class="quick-prompts">
+    <button class="qbtn" onclick="quickAsk('Suggest a trendy t-shirt design for me')">🎨 Design ideas</button>
+    <button class="qbtn" onclick="quickAsk('How do I find my t-shirt size?')">📏 Size guide</button>
+    <button class="qbtn" onclick="quickAsk('What fabric is best for t-shirts?')">🧵 Fabric tips</button>
+    <button class="qbtn" onclick="quickAsk('Give me t-shirt color combinations that look great')">🎨 Color combos</button>
+    <button class="qbtn" onclick="quickAsk('How to start a t-shirt business in Bangladesh?')">🚀 Business tips</button>
+  </div>
+  <div class="api-box">
+    <label>Gemini API Key (free)</label>
+    <div class="api-row">
+      <input type="password" id="apiKey" placeholder="Paste your free Gemini API key..." />
+      <button class="btn-save" onclick="saveKey()">Connect</button>
+    </div>
+    <div class="hint">Get free key → <a href="https://aistudio.google.com" target="_blank">aistudio.google.com</a> (no credit card needed)</div>
+  </div>
+  <div class="chat-box">
+    <div class="chat-header">
+      <div class="online-dot"></div>
+      Stitchly AI is ready to help with your t-shirt needs
+    </div>
+    <div class="messages" id="messages">
+      <div class="empty" id="emptyState">
+        <div class="empty-icon">👕</div>
+        <div>Connect your API key to chat with<br>your personal t-shirt assistant</div>
+      </div>
+    </div>
+    <div class="status" id="status">Waiting for API key...</div>
+    <div class="input-row">
+      <input type="text" id="userInput" placeholder="Ask about designs, sizes, fabrics..." onkeydown="if(event.key==='Enter') sendMsg()" />
+      <button class="btn-send" id="sendBtn" onclick="sendMsg()" disabled>
+        <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+      </button>
+    </div>
+  </div>
+  <footer>Stitchly &copy; 2025 &mdash; AI-powered t-shirt assistant</footer>
+  <script>
+    let apiKey = '';
+    let history = [];
+    const SYSTEM_PROMPT = `You are Stitchly AI, a friendly and expert fashion assistant for Stitchly — a t-shirt brand based in Bangladesh. You help customers with t-shirt design suggestions, size recommendations, fabric advice, color combinations, business tips, and order guidance. Keep answers helpful, friendly, and concise. Use emojis occasionally.`;
+    function saveKey() {
+      const val = document.getElementById('apiKey').value.trim();
+      if (!val) return alert('Please paste your API key first!');
+      apiKey = val;
+      document.getElementById('sendBtn').disabled = false;
+      setStatus('Connected — Stitchly AI is ready!', 'ok');
+      document.getElementById('emptyState').style.display = 'none';
+      addMsg('ai', '👋 Hey! I\'m Stitchly AI, your personal t-shirt assistant!\n\nI can help you with design ideas, size guides, fabric tips, color combinations, and even t-shirt business advice.\n\nWhat would you like to explore today? 👕✨');
+    }
+    function addMsg(role, text) {
+      const msgs = document.getElementById('messages');
+      const div = document.createElement('div');
+      div.className = `msg ${role}`;
+      const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      if (role === 'ai') {
+        div.innerHTML = `<div class="ai-label">Stitchly AI</div><div class="bubble">${text}</div><div class="msg-time">${now}</div>`;
+      } else {
+        div.innerHTML = `<div class="bubble">${text}</div><div class="msg-time">${now}</div>`;
+      }
+      msgs.appendChild(div);
+      msgs.scrollTop = msgs.scrollHeight;
+    }
+    function showTyping() {
+      const msgs = document.getElementById('messages');
+      const div = document.createElement('div');
+      div.className = 'msg ai';
+      div.id = 'typing';
+      div.innerHTML = `<div class="typing"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>`;
+      msgs.appendChild(div);
+      msgs.scrollTop = msgs.scrollHeight;
+    }
+    function setStatus(msg, type = '') {
+      const el = document.getElementById('status');
+      el.textContent = msg;
+      el.className = 'status ' + type;
+    }
+    function quickAsk(text) {
+      if (!apiKey) return alert('Please connect your API key first!');
+      document.getElementById('userInput').value = text;
+      sendMsg();
+    }
+    async function sendMsg() {
+      const input = document.getElementById('userInput');
+      const text = input.value.trim();
+      if (!text || !apiKey) return;
+      input.value = '';
+      document.getElementById('sendBtn').disabled = true;
+      setStatus('Stitchly AI is thinking...', '');
+      addMsg('user', text);
+      const fullHistory = [{ role: 'user', parts: [{ text: SYSTEM_PROMPT + '\n\nUser: ' + text }] }];
+      if (history.length > 0) {
+        fullHistory[0].parts[0].text = SYSTEM_PROMPT;
+        history.forEach(h => fullHistory.push(h));
+        fullHistory.push({ role: 'user', parts: [{ text }] });
+      }
+      history.push({ role: 'user', parts: [{ text }] });
+      showTyping();
+      try {
+        const res = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+          { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: fullHistory }) }
+        );
+        const data = await res.json();
+        document.getElementById('typing')?.remove();
+        if (data.error) {
+          setStatus('Error: ' + data.error.message, 'error');
+        } else {
+          const reply = data.candidates[0].content.parts[0].text;
+          history.push({ role: 'model', parts: [{ text: reply }] });
+          addMsg('ai', reply);
+          setStatus('', '');
+        }
+      } catch (e) {
+        document.getElementById('typing')?.remove();
+        setStatus('Network error — check your key or internet', 'error');
+      }
+      document.getElementById('sendBtn').disabled = false;
+    }
+  </script>
+</body>
+</html>
